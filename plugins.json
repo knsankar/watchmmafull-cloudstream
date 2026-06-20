@@ -1,0 +1,22 @@
+[
+    {
+        "iconUrl": "https://www.google.com/s2/favicons?domain=fullfightreplays.com&sz=%size%",
+        "fileHash": "sha256-40da5145cd96612224caef7f6e800a5ef1e26ae90a999742d355090891131f5c",
+        "apiVersion": 1,
+        "repositoryUrl": "https://github.com/knsankar/watchmmafull-cloudstream",
+        "fileSize": 14879,
+        "status": 1,
+        "language": "en",
+        "authors": [
+            "TRAE"
+        ],
+        "tvTypes": [
+            "Movie"
+        ],
+        "version": 2,
+        "internalName": "WatchMMAFullProvider",
+        "description": "Fight replay provider for FullFightReplays.",
+        "url": "https://raw.githubusercontent.com/knsankar/watchmmafull-cloudstream/builds/WatchMMAFullProvider.cs3",
+        "name": "WatchMMAFullProvider"
+    }
+]
