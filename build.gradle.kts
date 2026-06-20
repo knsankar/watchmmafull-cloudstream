@@ -1,5 +1,7 @@
-import com.lagradost.cloudstream3.gradle.CloudstreamExtension 
 import com.android.build.gradle.BaseExtension
+import com.lagradost.cloudstream3.gradle.CloudstreamExtension
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
 buildscript {
     repositories {
@@ -10,10 +12,10 @@ buildscript {
     }
 
     dependencies {
-        classpath("com.android.tools.build:gradle:7.0.4")
+        classpath("com.android.tools.build:gradle:8.7.3")
         // Cloudstream gradle plugin which makes everything work and builds plugins
         classpath("com.github.recloudstream:gradle:-SNAPSHOT")
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.7.22")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:2.3.0")
     }
 }
 
@@ -40,10 +42,11 @@ subprojects {
     }
 
     android {
+        namespace = "com.watchmmafull"
         defaultConfig {
             minSdk = 21
-            compileSdkVersion(33)
-            targetSdk = 33
+            compileSdkVersion(35)
+            targetSdk = 35
         }
 
         compileOptions {
@@ -51,14 +54,14 @@ subprojects {
             targetCompatibility = JavaVersion.VERSION_1_8
         }
 
-        tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-            kotlinOptions {
-                jvmTarget = "1.8" // Required
-                // Disables some unnecessary features
-                freeCompilerArgs = freeCompilerArgs +
-                        "-Xno-call-assertions" +
-                        "-Xno-param-assertions" +
-                        "-Xno-receiver-assertions"
+        tasks.withType<KotlinJvmCompile> {
+            compilerOptions {
+                jvmTarget.set(JvmTarget.JVM_1_8) // Required
+                freeCompilerArgs.addAll(
+                    "-Xno-call-assertions",
+                    "-Xno-param-assertions",
+                    "-Xno-receiver-assertions"
+                )
             }
         }
     }
@@ -72,16 +75,16 @@ subprojects {
 
         // these dependencies can include any of those which are added by the app,
         // but you dont need to include any of them if you dont need them
-        // https://github.com/recloudstream/cloudstream/blob/master/app/build.gradle
+        // https://github.com/recloudstream/cloudstream/blob/master/app/build.gradle.kts
         implementation(kotlin("stdlib")) // adds standard kotlin features, like listOf, mapOf etc
-        implementation("com.github.Blatzar:NiceHttp:0.4.4") // http library
-        implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.15.2")
-        implementation("org.jsoup:jsoup:1.16.2") // html parser
-        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+        implementation("com.github.Blatzar:NiceHttp:0.4.11") // http library
+        implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.13.1")
+        implementation("org.jsoup:jsoup:1.18.3") // html parser
+        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.1")
         implementation("org.mozilla:rhino:1.7.14")
     }
 }
 
 task<Delete>("clean") {
-    delete(rootProject.buildDir)
+    delete(rootProject.layout.buildDirectory)
 }
