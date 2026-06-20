@@ -13,8 +13,8 @@ import java.net.URI
 import java.net.URLEncoder
 
 class WatchMMAFullProvider : MainAPI() {
-    override var mainUrl = "https://watchmmafull.com"
-    override var name = "WatchMMAFull"
+    override var mainUrl = "https://fullfightreplays.com"
+    override var name = "FullFightReplays"
     override var lang = "en"
     override val hasMainPage = true
     override val hasDownloadSupport = true
@@ -22,27 +22,21 @@ class WatchMMAFullProvider : MainAPI() {
 
     override val mainPage = mainPageOf(
         "" to "Latest Fights",
-        "/search/ufc" to "UFC",
-        "/search/boxing" to "Boxing",
-        "/search/pfl" to "PFL",
-        "/search/bellator" to "Bellator",
-        "/search/one" to "ONE Championship",
+        "/ufc" to "UFC",
+        "/boxing" to "Boxing",
+        "?s=pfl" to "PFL",
+        "/bellator" to "Bellator",
+        "/one-championship" to "ONE Championship",
     )
 
     override suspend fun search(query: String): List<SearchResponse> {
         val encoded = URLEncoder.encode(query.trim(), "UTF-8").replace("+", "%20")
-        val document = app.get("$mainUrl/search/$encoded").document
+        val document = app.get("$mainUrl/?s=$encoded").document
         return document.toSearchResults()
     }
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
-        val targetUrl = when {
-            request.data.isBlank() && page == 1 -> mainUrl
-            request.data.isBlank() -> "$mainUrl/page/$page/"
-            page == 1 -> "$mainUrl${request.data}"
-            else -> "$mainUrl${request.data}/$page"
-        }
-
+        val targetUrl = buildListingUrl(request.data, page)
         val document = app.get(targetUrl).document
         return newHomePageResponse(request.name, document.toSearchResults())
     }
@@ -132,10 +126,11 @@ class WatchMMAFullProvider : MainAPI() {
         }
 
         for (element in document.select(
-            "iframe[src], iframe[data-src], video[src], video source[src], source[src], meta[itemprop=embedUrl]"
+            "a[href*=\"player.html?video=\"], a[href*=\"dailymotion\"], iframe[src], iframe[data-src], video[src], video source[src], source[src], meta[itemprop=embedUrl]"
         )) {
             register(
                 when {
+                    element.hasAttr("href") -> element.attr("href")
                     element.hasAttr("src") -> element.attr("src")
                     element.hasAttr("data-src") -> element.attr("data-src")
                     else -> element.attr("content")
@@ -152,26 +147,53 @@ class WatchMMAFullProvider : MainAPI() {
 
     private fun Document.toSearchResults(): List<SearchResponse> {
         val seen = linkedSetOf<String>()
-        return select("a[href]")
+        return select("h3 a[href], h2 a[href], a[href][title]")
             .mapNotNull { anchor ->
                 val href = anchor.attr("href").normalizeWatchUrl() ?: return@mapNotNull null
-                if (!href.startsWith(mainUrl) || !href.endsWith(".html")) return@mapNotNull null
+                if (!href.startsWith(mainUrl)) return@mapNotNull null
+                if (href == mainUrl || href.startsWith("$mainUrl/?") || isCategoryUrl(href)) return@mapNotNull null
                 if (!seen.add(href)) return@mapNotNull null
 
                 val title = listOfNotNull(
                     anchor.attr("title"),
                     anchor.text(),
-                    anchor.selectFirst("img")?.attr("alt"),
-                    anchor.parent()?.selectFirst("img")?.attr("alt")
+                    anchor.parent()?.text(),
+                    anchor.selectFirst("img")?.attr("alt")
                 ).firstOrNull { !it.isNullOrBlank() }?.cleanTitle() ?: return@mapNotNull null
 
+                val card = anchor.parent()?.parent() ?: anchor.parent()
                 val poster = anchor.selectFirst("img")?.imageUrl()
                     ?: anchor.parent()?.selectFirst("img")?.imageUrl()
+                    ?: card?.selectFirst("img")?.imageUrl()
 
                 newMovieSearchResponse(title, href, TvType.Movie) {
                     this.posterUrl = poster
                 }
             }
+    }
+
+    private fun buildListingUrl(data: String, page: Int): String {
+        return when {
+            data.isBlank() && page == 1 -> mainUrl
+            data.isBlank() -> "$mainUrl/?page$page"
+            data.startsWith("?") && page == 1 -> "$mainUrl/$data"
+            data.startsWith("?") -> "$mainUrl/$data&page$page"
+            page == 1 -> "$mainUrl$data"
+            else -> "$mainUrl$data?page$page"
+        }
+    }
+
+    private fun isCategoryUrl(url: String): Boolean {
+        val categories = setOf(
+            "$mainUrl/ufc",
+            "$mainUrl/boxing",
+            "$mainUrl/bellator",
+            "$mainUrl/one-championship",
+            "$mainUrl/other-tournaments",
+            "$mainUrl/k-1",
+            "$mainUrl/mma"
+        )
+        return url in categories
     }
 
     private fun Element.imageUrl(): String? {

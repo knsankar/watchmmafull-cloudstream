@@ -1,10 +1,10 @@
 // use an integer for version numbers
-version = 1
+version = 2
 
 
 cloudstream {
     language = "en"
-    description = "Fight replay provider for WatchMMAFull."
+    description = "Fight replay provider for FullFightReplays."
     authors = listOf("TRAE")
 
     /**
@@ -17,5 +17,5 @@ cloudstream {
     status = 1 // will be 3 if unspecified
 
     tvTypes = listOf("Movie")
-    iconUrl = "https://www.google.com/s2/favicons?domain=watchmmafull.com&sz=%size%"
+    iconUrl = "https://www.google.com/s2/favicons?domain=fullfightreplays.com&sz=%size%"
 }
