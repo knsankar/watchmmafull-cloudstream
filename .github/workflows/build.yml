@@ -1,19 +1,68 @@
+name: Build
+
+concurrency:
+  group: "build"
+  cancel-in-progress: true
+
+on:
+  push:
+    branches:
+      - master
+      - main
+    paths-ignore:
+      - "*.md"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          path: src
+
+      - name: Checkout builds
+        uses: actions/checkout@v4
+        with:
+          ref: builds
+          path: builds
+
+      - name: Clean old builds
+        run: rm -f "$GITHUB_WORKSPACE"/builds/*.cs3
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
+
       - name: Build Plugins
         run: |
           set -euxo pipefail
           cd "$GITHUB_WORKSPACE/src"
           chmod +x gradlew
-
           ./gradlew --version
           echo "ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT:-}"
           echo "ANDROID_HOME=${ANDROID_HOME:-}"
-
           ./gradlew make makePluginsJson --stacktrace --info
-
           echo "Produced cs3 files:"
-          find . -name '*.cs3' -maxdepth 6 -print || true
+          find . -maxdepth 6 -name '*.cs3' -print || true
           ls -la build || true
-
-          # copy artifacts (avoid failing just because glob doesn't match)
-          find . -name '*.cs3' -maxdepth 6 -exec cp -f {} "$GITHUB_WORKSPACE/builds/" \; || true
+          find . -maxdepth 6 -name '*.cs3' -exec cp -f {} "$GITHUB_WORKSPACE/builds/" \; || true
           cp -f build/plugins.json "$GITHUB_WORKSPACE/builds"
+
+      - name: Push builds
+        run: |
+          cd "$GITHUB_WORKSPACE/builds"
+          git config --local user.email "actions@github.com"
+          git config --local user.name "GitHub Actions"
+          git add .
+          git commit --amend -m "Build $GITHUB_SHA" || exit 0
+          git push --force
