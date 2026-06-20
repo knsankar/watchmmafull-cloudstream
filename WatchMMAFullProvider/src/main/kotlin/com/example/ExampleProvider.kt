@@ -1,10 +1,12 @@
 package com.watchmmafull
 
 import com.lagradost.cloudstream3.*
+import com.lagradost.cloudstream3.SubtitleFile
 import com.lagradost.cloudstream3.utils.ExtractorLink
-import com.lagradost.cloudstream3.utils.SubtitleFile
+import com.lagradost.cloudstream3.utils.ExtractorLinkType
 import com.lagradost.cloudstream3.utils.getQualityFromName
 import com.lagradost.cloudstream3.utils.loadExtractor
+import com.lagradost.cloudstream3.utils.newExtractorLink
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
 import java.net.URI
@@ -89,7 +91,7 @@ class WatchMMAFullProvider : MainAPI() {
         val html = document.html()
         val seen = linkedSetOf<String>()
 
-        fun register(rawUrl: String?) {
+        suspend fun register(rawUrl: String?) {
             val normalized = rawUrl.normalizeWatchUrl() ?: return
             if (!seen.add(normalized)) return
 
@@ -108,24 +110,30 @@ class WatchMMAFullProvider : MainAPI() {
                 normalized.contains(".mpd")
 
             if (directMedia) {
+                val type = when {
+                    normalized.contains(".m3u8") -> ExtractorLinkType.M3U8
+                    normalized.contains(".mpd") -> ExtractorLinkType.DASH
+                    else -> ExtractorLinkType.VIDEO
+                }
                 callback.invoke(
-                    ExtractorLink(
+                    newExtractorLink(
                         name,
                         "${name} ${URI(normalized).host ?: "stream"}",
                         normalized,
-                        data,
-                        getQualityFromName(normalized),
-                        normalized.contains(".m3u8") || normalized.contains(".mpd")
-                    )
+                        type
+                    ) {
+                        referer = data
+                        quality = getQualityFromName(normalized)
+                    }
                 )
             } else {
                 loadExtractor(normalized, data, subtitleCallback, callback)
             }
         }
 
-        document.select(
+        for (element in document.select(
             "iframe[src], iframe[data-src], video[src], video source[src], source[src], meta[itemprop=embedUrl]"
-        ).forEach { element ->
+        )) {
             register(
                 when {
                     element.hasAttr("src") -> element.attr("src")
@@ -135,7 +143,7 @@ class WatchMMAFullProvider : MainAPI() {
             )
         }
 
-        Regex("""https?:\\?/\\?/[^"'\\s<>()]+""").findAll(html).forEach { match ->
+        for (match in Regex("""https?:\\?/\\?/[^"'\\s<>()]+""").findAll(html)) {
             register(match.value)
         }
 
