@@ -1,0 +1,8 @@
+{
+  "name": "WatchMMAFull Repo",
+  "description": "CloudStream plugins for WatchMMAFull",
+  "manifestVersion": 1,
+  "pluginLists": [
+    "https://raw.githubusercontent.com/knsankar/watchmmafull-cloudstream/builds/plugins.json"
+  ]
+}
