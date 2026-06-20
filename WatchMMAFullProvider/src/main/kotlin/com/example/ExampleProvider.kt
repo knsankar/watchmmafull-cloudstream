@@ -18,7 +18,7 @@ class WatchMMAFullProvider : MainAPI() {
     override var lang = "en"
     override val hasMainPage = true
     override val hasDownloadSupport = true
-    override val supportedTypes = setOf(TvType.Others)
+    override val supportedTypes = setOf(TvType.Movie)
 
     override val mainPage = mainPageOf(
         "" to "Latest Fights",
@@ -72,7 +72,7 @@ class WatchMMAFullProvider : MainAPI() {
 
         val recommendations = document.toSearchResults().take(20)
 
-        return newMovieLoadResponse(title, url, TvType.Others, url) {
+        return newMovieLoadResponse(title, url, TvType.Movie, url) {
             posterUrl = poster
             year = Regex("""(19|20)\d{2}""").find(title)?.value?.toIntOrNull()
             this.plot = plot
@@ -168,7 +168,7 @@ class WatchMMAFullProvider : MainAPI() {
                 val poster = anchor.selectFirst("img")?.imageUrl()
                     ?: anchor.parent()?.selectFirst("img")?.imageUrl()
 
-                newMovieSearchResponse(title, href, TvType.Others) {
+                newMovieSearchResponse(title, href, TvType.Movie) {
                     this.posterUrl = poster
                 }
             }
