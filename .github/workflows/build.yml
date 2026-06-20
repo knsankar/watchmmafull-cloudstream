@@ -43,6 +43,15 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v4
 
+      - name: Expose Android SDK to Gradle
+        run: |
+          SDK_PATH="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-$HOME/.android/sdk}}"
+          echo "Using SDK at: $SDK_PATH"
+          echo "ANDROID_SDK_ROOT=$SDK_PATH" >> "$GITHUB_ENV"
+          echo "ANDROID_HOME=$SDK_PATH" >> "$GITHUB_ENV"
+          echo "sdk.dir=$SDK_PATH" > "$GITHUB_WORKSPACE/src/local.properties"
+          cat "$GITHUB_WORKSPACE/src/local.properties"
+
       - name: Build Plugins
         run: |
           set -euxo pipefail
