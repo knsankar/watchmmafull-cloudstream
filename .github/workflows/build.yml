@@ -43,7 +43,7 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v4
         with:
-          packages: "tools platform-tools build-tools;33.0.2 platforms;android-33"
+          packages: "tools platform-tools build-tools;34.0.0 platforms;android-35"
 
       - name: Expose Android SDK to Gradle
         run: |
